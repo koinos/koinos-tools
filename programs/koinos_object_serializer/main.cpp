@@ -67,14 +67,37 @@ struct mint_args
 
 KOINOS_REFLECT( koinos::koin::mint_args, (to)(value) );
 
+namespace koinos::koin {
+
+struct balance_of_args
+{
+   protocol::account_type owner;
+};
+
+}
+
+KOINOS_REFLECT( koinos::koin::balance_of_args, (owner) );
+
 typedef std::variant<
    koinos::pow::pow_signature_data,
    koinos::pow::difficulty_metadata,
    koinos::koin::transfer_args,
-   koinos::koin::mint_args
+   koinos::koin::mint_args,
+   koinos::koin::balance_of_args
    > any_object;
 
-void serialize_loop(bool binary)
+size_t get_varint_size( const koinos::variable_blob& vb )
+{
+   size_t i;
+   for( i=0; i<vb.size(); i++ )
+   {
+      if( (vb[i] & 0x80) == 0 )
+         return (i+1);
+   }
+   return i;
+}
+
+void serialize_loop(char base)
 {
    while(true)
    {
@@ -83,10 +106,23 @@ void serialize_loop(bool binary)
       if( !std::cin )
          break;
       koinos::pack::json j = koinos::pack::json::parse(line);
-      any_object obj;
-      koinos::pack::from_json( j, obj );
-      koinos::variable_blob vb = koinos::pack::to_variable_blob( obj );
-      if( binary )
+      koinos::variable_blob vb;
+      if( j["type"] == "bytes" )
+      {
+         std::string value = j["value"].get<std::string>();
+         koinos::pack::util::decode_multibase( value.c_str(), value.size(), vb );
+      }
+      else
+      {
+         any_object obj;
+         koinos::pack::from_json( j, obj );
+         koinos::pack::to_variable_blob( vb, obj, false );
+         // We need to strip the variable_blob selector from the output
+         size_t n = get_varint_size(vb);
+         vb.erase( vb.begin(), vb.begin()+n );
+      }
+
+      if( base == '\0' )
       {
          std::cout.put('\0');
          std::cout.write(vb.data(), vb.size());
@@ -95,7 +131,7 @@ void serialize_loop(bool binary)
       else
       {
          std::vector<char> b64;
-         koinos::pack::util::encode_multibase(vb.data(), vb.size(), b64, 'M');
+         koinos::pack::util::encode_multibase(vb.data(), vb.size(), b64, base);
          std::cout.write(b64.data(), b64.size());
          std::cout << std::endl;
          std::cout.flush();
@@ -151,6 +187,7 @@ void deserialize_loop()
 #define HELP_OPTION              "help"
 #define SERIALIZE_OPTION         "serialize"
 #define DESERIALIZE_OPTION       "deserialize"
+#define BASE_OPTION              "base"
 #define BINARY_OPTION            "binary"
 
 int main( int argc, char** argv, char** envp )
@@ -162,7 +199,8 @@ int main( int argc, char** argv, char** envp )
          (HELP_OPTION            ",h", "Print this help message and exit.")
          (SERIALIZE_OPTION       ",s", "Serialize to binary form")
          (DESERIALIZE_OPTION     ",d", "Deserialize from binary form")
-         (BINARY_OPTION          ",b", "Don't base64-encode binary")
+         (BINARY_OPTION          ",n", boost::program_options::bool_switch()->default_value(false), "Output binary data")
+         (BASE_OPTION            ",b", boost::program_options::value< std::string >()->default_value("M"), "Base to serialize to")
          ;
 
       boost::program_options::variables_map args;
@@ -174,10 +212,15 @@ int main( int argc, char** argv, char** envp )
          return EXIT_SUCCESS;
       }
 
-      bool binary = false;
-
-      if( args.count( BINARY_OPTION ) )
-         binary = true;
+      std::string str_base = args[BASE_OPTION].as< std::string >();
+      if( str_base.size() != 1 )
+      {
+         std::cerr << "Base must be exactly 1 character" << std::endl;
+         return EXIT_FAILURE;
+      }
+      char base = str_base[0];
+      if( args[BINARY_OPTION].as< bool >() )
+         base = '\0';
 
       if( args.count( DESERIALIZE_OPTION ) )
       {
@@ -190,7 +233,7 @@ int main( int argc, char** argv, char** envp )
       }
       else
       {
-         serialize_loop(binary);
+         serialize_loop(base);
       }
 
       return EXIT_SUCCESS;
