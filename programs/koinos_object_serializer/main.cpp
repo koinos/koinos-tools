@@ -5,6 +5,7 @@
 #include <koinos/pack/classes.hpp>
 #include <koinos/log.hpp>
 
+#include <boost/container/flat_map.hpp>
 #include <boost/exception/all.hpp>
 #include <boost/program_options.hpp>
 
@@ -48,7 +49,7 @@ struct transfer_args
 {
    protocol::account_type from;
    protocol::account_type to;
-   uint64_t               value;
+   uint64_t               value = 0;
 };
 
 }
@@ -60,7 +61,7 @@ namespace koinos::koin {
 struct mint_args
 {
    protocol::account_type to;
-   uint64_t               value;
+   uint64_t               value = 0;
 };
 
 }
@@ -78,12 +79,98 @@ struct balance_of_args
 
 KOINOS_REFLECT( koinos::koin::balance_of_args, (owner) );
 
+namespace koinos::koin {
+
+struct balance_of_result
+{
+   uint64_t balance = 0;
+};
+
+}
+
+KOINOS_REFLECT( koinos::koin::balance_of_result, (balance) );
+
+// TODO:  Reflect all result types
+
+/**
+ * Create a method by deserializing bytes from a JSON-ish type selector.
+ *
+ * That is, we process methods of the form:
+ * {"type" : ..., "bytes" : ...}
+ */
+
+template< typename... Ts >
+inline void from_json_bytes( const nlohmann::json& j, std::variant<Ts... >&v, uint32_t depth )
+{
+   static std::map< std::string, int64_t > to_tag = []()
+   {
+      std::map< std::string, int64_t > name_map;
+      for( size_t i = 0; i < sizeof...(Ts); ++i )
+      {
+         std::string n;
+         koinos::pack::util::variant_helper< Ts... >::get_typename_at( i, n );
+         name_map[n] = i;
+      }
+      return name_map;
+   }();
+
+   depth++;
+   if( !(depth <= KOINOS_PACK_MAX_RECURSION_DEPTH) ) throw koinos::pack::depth_violation( "Unpack depth exceeded" );
+   if( !(j.is_object()) ) throw koinos::pack::json_type_mismatch( "Unexpected JSON type: object expected" );
+   if( !(j.size() == 2) ) throw koinos::pack::json_type_mismatch( "Variant JSON type must only contain two fields" );
+   if( !(j.contains( "type" )) ) throw koinos::pack::json_type_mismatch( "Variant JSON type must contain field 'type'" );
+   if( !(j.contains( "bytes" )) ) throw koinos::pack::json_type_mismatch( "Variant JSON type must contain field 'bytes'" );
+
+   auto bytes_json = j[ "bytes" ];
+   if( !(bytes_json.is_string()) ) throw koinos::pack::json_type_mismatch( "Unexpected JSON type: string expected" );
+   std::string bytes_str = bytes_json.get< std::string >();
+   std::vector< char > bytes;
+   koinos::pack::util::decode_multibase( bytes_str.c_str(), bytes_str.size(), bytes );
+
+   auto type = j[ "type" ];
+   int64_t index = -1;
+
+   if( type.is_number_integer() )
+   {
+      index = type.get< int64_t >();
+   }
+   else if( type.is_string() )
+   {
+      auto itr = to_tag.find( type.get< std::string >() );
+      if( !(itr != to_tag.end()) ) throw koinos::pack::json_type_mismatch( "Invalid type name in JSON variant" );
+      index = itr->second;
+   }
+   else
+   {
+      if( !(false) ) throw koinos::pack::json_type_mismatch( "Variant JSON 'type' must be an unsigned integer or string" );
+   }
+
+   koinos::pack::util::variant_helper< Ts... >::init_variant( v, index );
+   std::visit( [&]( auto& arg ){ koinos::pack::from_variable_blob( bytes, arg ); }, v );
+}
+
+template< typename... Ts >
+boost::container::flat_map< std::string, size_t > create__map( std::variant< Ts... >* v = nullptr )
+{
+   boost::container::flat_map< std::string, size_t > result;
+
+   for( size_t n=0; n<sizeof...(Ts); n++ )
+   {
+      std::string name;
+      koinos::pack::util::variant_helper< Ts... >::get_typename_at( n, name );
+      result[name] = n;
+      std::cout << name << std::endl;
+   }
+   return result;
+}
+
 typedef std::variant<
    koinos::pow::pow_signature_data,
    koinos::pow::difficulty_metadata,
    koinos::koin::transfer_args,
    koinos::koin::mint_args,
-   koinos::koin::balance_of_args
+   koinos::koin::balance_of_args,
+   koinos::koin::balance_of_result
    > any_object;
 
 size_t get_varint_size( const koinos::variable_blob& vb )
@@ -145,42 +232,20 @@ void deserialize_loop()
    {
       if( !std::cin )
          break;
-      char c = std::cin.get();
+
+      std::string line;
+      std::getline(std::cin, line);
       if( !std::cin )
          break;
+      koinos::pack::json j = koinos::pack::json::parse(line);
+      any_object obj;
+      from_json_bytes( j, obj, 0 );
 
-      if( c == '\0' )
-      {
-         /*
-         koinos::variable_blob vb;
-         from_binary( std::cin, vb );
-         if( !std::cin )
-            break;
-         any_object obj;
-         */
-         // TODO finish binary decoding
-         throw koinos::pack::base_decode_error( "Binary decoding not supported yet" );
-      }
-      else
-      {
-         std::string line;
-         std::getline(std::cin, line);
-         if( !std::cin )
-            break;
-         std::string mb_line = std::string(1, c)+line;
+      koinos::pack::json j2;
+      koinos::pack::to_json( j2, obj );
 
-         std::vector<char> temp;
-         koinos::pack::util::decode_multibase(mb_line.c_str(), mb_line.size(), temp);
-
-         any_object obj;
-         koinos::pack::from_variable_blob( temp, obj );
-
-         koinos::pack::json j;
-         koinos::pack::to_json( j, obj );
-
-         std::cout << j.dump() << std::endl;
-         std::cout.flush();
-      }
+      std::cout << j2.dump() << std::endl;
+      std::cout.flush();
    }
 }
 
