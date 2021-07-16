@@ -26,9 +26,9 @@ KOINOS_REFLECT( koinos::pow::pow_signature_data, (nonce)(recoverable_signature) 
 
 namespace koinos::pow {
 
-struct difficulty_metadata
+struct difficulty_metadata_v1
 {
-   uint256_t      difficulty_target = 0;
+   uint256_t      target = 0;
    timestamp_type last_block_time = timestamp_type( 0 );
    timestamp_type block_window_time = timestamp_type( 0 );
    uint32_t       averaging_window = 0;
@@ -36,37 +36,130 @@ struct difficulty_metadata
 
 }
 
-KOINOS_REFLECT( koinos::pow::difficulty_metadata,
-   (difficulty_target)
+KOINOS_REFLECT( koinos::pow::difficulty_metadata_v1,
+   (target)
    (last_block_time)
    (block_window_time)
    (averaging_window)
 )
 
-namespace koinos::koin {
+namespace koinos::pow {
 
-struct transfer_args
+struct difficulty_metadata_v2
 {
-   protocol::account_type from;
-   protocol::account_type to;
-   uint64_t               value = 0;
+   uint256_t      target = 0;
+   timestamp_type last_block_time = timestamp_type( 0 );
+   uint256_t      difficulty = 0;
+   timestamp_type target_block_interval = timestamp_type( 10 );
 };
 
 }
 
-KOINOS_REFLECT( koinos::koin::transfer_args, (from)(to)(value) );
+KOINOS_REFLECT( koinos::pow::difficulty_metadata_v2,
+   (target)
+   (last_block_time)
+   (difficulty)
+   (target_block_interval)
+)
 
-namespace koinos::koin {
+///////////////////////////////////////////////
+// get_difficulty()
 
-struct mint_args
+namespace koinos::pow {
+
+struct get_difficulty_args
 {
-   protocol::account_type to;
-   uint64_t               value = 0;
+};
+
+
+struct get_difficulty_result
+{
+   difficulty_metadata_v2   diff_meta;
 };
 
 }
 
-KOINOS_REFLECT( koinos::koin::mint_args, (to)(value) );
+KOINOS_REFLECT( koinos::pow::get_difficulty_args, )
+KOINOS_REFLECT( koinos::pow::get_difficulty_result, (diff_meta) )
+
+///////////////////////////////////////////////
+// name()
+
+namespace koinos::koin {
+
+struct name_args
+{
+};
+
+struct name_result
+{
+   std::string    name;
+};
+
+}
+
+KOINOS_REFLECT( koinos::koin::name_args, )
+KOINOS_REFLECT( koinos::koin::name_result, (name) );
+
+///////////////////////////////////////////////
+// symbol()
+
+namespace koinos::koin {
+
+struct symbol_args
+{
+};
+
+struct symbol_result
+{
+   std::string    symbol;
+};
+
+}
+
+KOINOS_REFLECT( koinos::koin::symbol_args, )
+KOINOS_REFLECT( koinos::koin::symbol_result, (symbol) );
+
+///////////////////////////////////////////////
+// decimals()
+
+namespace koinos::koin {
+
+struct decimals_args
+{
+};
+
+struct decimals_result
+{
+   uint8_t    decimals = 0;
+};
+
+}
+
+KOINOS_REFLECT( koinos::koin::decimals_args, )
+KOINOS_REFLECT( koinos::koin::decimals_result, (decimals) );
+
+///////////////////////////////////////////////
+// total_supply()
+
+namespace koinos::koin {
+
+struct total_supply_args
+{
+};
+
+struct total_supply_result
+{
+   uint64_t    supply = 0;
+};
+
+}
+
+KOINOS_REFLECT( koinos::koin::total_supply_args, )
+KOINOS_REFLECT( koinos::koin::total_supply_result, (supply) );
+
+///////////////////////////////////////////////
+// balance_of()
 
 namespace koinos::koin {
 
@@ -89,6 +182,49 @@ struct balance_of_result
 }
 
 KOINOS_REFLECT( koinos::koin::balance_of_result, (balance) );
+
+///////////////////////////////////////////////
+// transfer()
+
+namespace koinos::koin {
+
+struct transfer_args
+{
+   protocol::account_type from;
+   protocol::account_type to;
+   uint64_t               value = 0;
+};
+
+struct transfer_result
+{
+   bool                   success = false;
+};
+
+}
+
+KOINOS_REFLECT( koinos::koin::transfer_args, (from)(to)(value) );
+KOINOS_REFLECT( koinos::koin::transfer_result, (success) );
+
+///////////////////////////////////////////////
+// mint()
+
+namespace koinos::koin {
+
+struct mint_args
+{
+   protocol::account_type to;
+   uint64_t               value = 0;
+};
+
+struct mint_result
+{
+   bool                   success = false;
+};
+
+}
+
+KOINOS_REFLECT( koinos::koin::mint_args, (to)(value) );
+KOINOS_REFLECT( koinos::koin::mint_result, (success) );
 
 // TODO:  Reflect all result types
 
@@ -166,11 +302,23 @@ boost::container::flat_map< std::string, size_t > create__map( std::variant< Ts.
 
 typedef std::variant<
    koinos::pow::pow_signature_data,
-   koinos::pow::difficulty_metadata,
-   koinos::koin::transfer_args,
-   koinos::koin::mint_args,
+   koinos::pow::difficulty_metadata_v1,
+   koinos::pow::difficulty_metadata_v2,
+   koinos::pow::get_difficulty_args,
+   koinos::pow::get_difficulty_result,
+
+   koinos::koin::name_args,
+   koinos::koin::name_result,
+   koinos::koin::symbol_args,
+   koinos::koin::symbol_result,
+   koinos::koin::decimals_args,
+   koinos::koin::decimals_result,
+   koinos::koin::total_supply_args,
+   koinos::koin::total_supply_result,
    koinos::koin::balance_of_args,
-   koinos::koin::balance_of_result
+   koinos::koin::balance_of_result,
+   koinos::koin::mint_args,
+   koinos::koin::mint_result
    > any_object;
 
 size_t get_varint_size( const koinos::variable_blob& vb )
