@@ -3,11 +3,16 @@
 
 #include <boost/program_options.hpp>
 
+#include <google/protobuf/util/json_util.h>
+
+#include <koinos/conversion.hpp>
 #include <koinos/exception.hpp>
 #include <koinos/log.hpp>
 #include <koinos/crypto/elliptic.hpp>
 #include <koinos/crypto/multihash.hpp>
-#include <koinos/pack/classes.hpp>
+
+#include <koinos/rpc/chain/chain_rpc.pb.h>
+#include <koinos/protocol/protocol.pb.h>
 
 // Command line option definitions
 #define HELP_OPTION        "help"
@@ -19,33 +24,31 @@
 #define WRAP_OPTION        "wrap"
 #define WRAP_FLAG          "w"
 
+using namespace koinos;
+
 // Sign the given transaction
-void sign_transaction( koinos::protocol::transaction& transaction, koinos::crypto::private_key& transaction_signing_key )
+void sign_transaction( protocol::transaction& transaction, crypto::private_key& transaction_signing_key )
 {
    // Signature is on the hash of the active data
-   koinos::multihash digest = koinos::crypto::hash( CRYPTO_SHA2_256_ID, transaction.active_data );
-   auto signature = transaction_signing_key.sign_compact( digest );
-   koinos::pack::to_variable_blob( transaction.signature_data, signature );
+   auto trx_id = crypto::hash( crypto::multicodec::sha2_256, transaction.active() );
+   transaction.set_id( converter::as< std::string >( trx_id ) );
+   transaction.set_signature_data( converter::as< std::string >( transaction_signing_key.sign_compact( trx_id ) ) );
 }
 
 // Wrap the given transaction in a request
-koinos::rpc::chain::chain_rpc_request wrap_transaction( koinos::protocol::transaction& transaction )
+rpc::chain::chain_request wrap_transaction( protocol::transaction& transaction )
 {
-   // Construct a submit_transaction_request from the transaction
-   koinos::rpc::chain::submit_transaction_request transaction_request;
-   transaction_request.transaction = transaction;
-   transaction_request.verify_passive_data = true;
-   transaction_request.verify_transaction_signatures = true;
+   rpc::chain::chain_request req;
+   auto submit_transaction = req.mutable_submit_transaction();
+   submit_transaction->mutable_transaction()->CopyFrom( transaction );
+   submit_transaction->set_verify_passive_data( true );
+   submit_transaction->set_verify_transaction_signature( true );
 
-   // Put the request in a chain_request
-   koinos::rpc::chain::chain_rpc_request chain_request;
-   chain_request = transaction_request;
-
-   return chain_request;
+   return req;
 }
 
 // Read a base58 WIF private key from the given file
-koinos::crypto::private_key read_keyfile( std::string key_filename )
+crypto::private_key read_keyfile( std::string key_filename )
 {
    // Read base58 wif string from given file
    std::string key_string;
@@ -55,7 +58,7 @@ koinos::crypto::private_key read_keyfile( std::string key_filename )
    instream.close();
 
    // Create and return the key from the wif
-   auto key = koinos::crypto::private_key::from_wif( key_string );
+   auto key = crypto::private_key::from_wif( key_string );
    return key;
 }
 
@@ -97,15 +100,15 @@ int main( int argc, char** argv )
       std::getline( std::cin, transaction_json );
 
       // Parse and deserialize the json to a transaction
-      auto j = koinos::pack::json::parse( transaction_json );
-      koinos::protocol::transaction transaction;
-      koinos::pack::from_json( j, transaction );
+      google::protobuf::util::JsonParseOptions json_opts;
+      json_opts.ignore_unknown_fields = true;
+      json_opts.case_insensitive_enum_parsing = true;
+
+      protocol::transaction transaction;
+      google::protobuf::util::JsonStringToMessage( transaction_json, &transaction, json_opts );
 
       // Sign the transaction
       sign_transaction( transaction, private_key );
-
-      // Set the transaction id
-      transaction.id = koinos::crypto::hash( CRYPTO_SHA2_256_ID, transaction.active_data );
 
       if (wrap) // Wrap the transaction if requested
       {

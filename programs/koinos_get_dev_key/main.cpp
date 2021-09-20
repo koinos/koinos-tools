@@ -7,7 +7,6 @@
 #include <koinos/log.hpp>
 #include <koinos/crypto/elliptic.hpp>
 #include <koinos/crypto/multihash.hpp>
-#include <koinos/pack/classes.hpp>
 #include <koinos/util.hpp>
 
 // Command line option definitions
@@ -24,8 +23,6 @@ const uint64_t NUM_KEYS_DEFAULT = 1;
 #define OUTPUT_FILE_OPTION "out"
 #define OUTPUT_FILE_FLAG   "o"
 const std::string OUTPUT_FILE_DEFAULT = "private.key";
-
-
 
 int main( int argc, char** argv )
 {
@@ -76,7 +73,7 @@ int main( int argc, char** argv )
 
       for ( uint64_t i = 0; i < num_keys; i++ )
       {
-         auto secret = koinos::crypto::hash_n( CRYPTO_SHA2_256_ID, seed, i );
+         auto secret = koinos::crypto::hash( koinos::crypto::multicodec::sha2_256, seed, i );
          auto private_key = koinos::crypto::private_key::regenerate( secret );
          std::cout << "Generated key: " << private_key.get_public_key().to_address() << std::endl;
          outstream << private_key.to_wif() << std::endl;

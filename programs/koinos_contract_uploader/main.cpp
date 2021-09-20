@@ -4,13 +4,16 @@
 
 #include <boost/program_options.hpp>
 
+#include <koinos/conversion.hpp>
 #include <koinos/exception.hpp>
 #include <koinos/log.hpp>
 #include <koinos/crypto/elliptic.hpp>
 #include <koinos/crypto/multihash.hpp>
-#include <koinos/pack/classes.hpp>
 #include <koinos/mq/client.hpp>
 #include <koinos/util.hpp>
+
+#include <koinos/protocol/protocol.pb.h>
+#include <koinos/rpc/chain/chain_rpc.pb.h>
 
 #define HELP_OPTION               "help"
 #define PRIVATE_KEY_FILE_OPTION   "private-key-file"
@@ -84,7 +87,7 @@ int main( int argc, char** argv )
       std::string public_address      = signing_key.get_public_key().to_address();
 
       protocol::transaction transaction;
-      transaction.active_data.make_mutable();
+      protocol::active_transaction_data active_data;
 
       if ( args.count( UPLOAD_OPTION ) )
       {
@@ -100,18 +103,14 @@ int main( int argc, char** argv )
 
          std::vector< char > bytecode( (std::istreambuf_iterator< char >( contract )), std::istreambuf_iterator< char >() );
 
-         protocol::upload_contract_operation op;
-         auto contract_id = koinos::crypto::hash( CRYPTO_RIPEMD160_ID, signing_key.get_public_key().to_address() );
-         std::memcpy( op.contract_id.data(), contract_id.digest.data(), op.contract_id.size() );
-         op.bytecode.insert( op.bytecode.end(), bytecode.begin(), bytecode.end() );
+         auto op = active_data.add_operations();
+         auto upload_contract = op->mutable_upload_contract();
 
-         transaction.active_data->operations.push_back( op );
-         transaction.active_data->resource_limit = 10'000'000;
-         transaction.active_data->nonce = get_next_nonce( client, public_address );
+         auto contract_id = koinos::crypto::hash( crypto::multicodec::ripemd_160, signing_key.get_public_key().to_address() );
+         upload_contract->set_contract_id( converter::as< std::string >( contract_id ) );
+         upload_contract->set_bytecode( converter::as< std::string >( bytecode ) );
 
-         pack::json j;
-         pack::to_json( j, op.contract_id );
-         LOG(info) << "Attempting to upload contract with ID: " << j.dump();
+         LOG(info) << "Attempting to upload contract with ID: " << to_hex( upload_contract->contract_id() );
       }
       else if ( args.count( OVERRIDE_OPTION ) )
       {
@@ -133,19 +132,12 @@ int main( int argc, char** argv )
             "The contract ID is required"
          );
 
-         auto j = koinos::pack::json::parse( '"' + args[ CONTRACT_ID_OPTION ].as< std::string >() + '"' );
-         chain::contract_call_bundle bundle;
-         koinos::pack::from_json( j, bundle.contract_id );
-
-         bundle.entry_point = args[ ENTRY_POINT_OPTION ].as< uint32_t >();
-
-         protocol::set_system_call_operation op;
-         op.call_id = args[ CALL_ID_OPTION ].as< uint32_t >();
-         op.target  = bundle;
-
-         transaction.active_data->operations.push_back( op );
-         transaction.active_data->resource_limit = 10'000'000;
-         transaction.active_data->nonce = get_next_nonce( client, public_address );
+         auto op = active_data.add_operations();
+         auto set_system_call = op->mutable_set_system_call();
+         set_system_call->set_call_id( args[ CALL_ID_OPTION ].as< uint32_t >() );
+         auto system_call_bundle = set_system_call->mutable_target()->mutable_system_call_bundle();
+         system_call_bundle->set_contract_id( from_hex( args[ CONTRACT_ID_OPTION ].as< std::string >() ) );
+         system_call_bundle->set_entry_point( args[ ENTRY_POINT_OPTION ].as< uint32_t >() );
 
          LOG(info) << "Attempting to apply the system call override";
       }
@@ -154,9 +146,14 @@ int main( int argc, char** argv )
          KOINOS_THROW( koinos::exception, "Use --upload or --override when invoking the tool, see --help for more information" );
       }
 
-      transaction.id = crypto::hash( CRYPTO_SHA2_256_ID, transaction.active_data );
-      auto signature = signing_key.sign_compact( transaction.id );
-      pack::to_variable_blob( transaction.signature_data, signature );
+      active_data.set_resource_limit( 10'000'000 );
+      active_data.set_nonce( get_next_nonce( client, public_address ) );
+
+      transaction.set_active( converter::as< std::string >( active_data ) );
+
+      auto trx_id = crypto::hash( crypto::multicodec::sha2_256, transaction.active() );
+      transaction.set_id( converter::as< std::string >( trx_id ) );
+      transaction.set_signature_data( converter::as< std::string >( signing_key.sign_compact( trx_id ) ) );
 
       submit_transaction( client, transaction );
 
@@ -184,61 +181,30 @@ uint64_t get_next_nonce( std::shared_ptr< mq::client > client, const std::string
 {
    uint64_t nonce = 0;
 
-   rpc::chain::chain_rpc_request req = rpc::chain::get_account_nonce_request {
-      .account = protocol::account_type( account.begin(), account.end() )
-   };
+   rpc::chain::chain_request req;
+   auto get_account_nonce = req.mutable_get_account_nonce();
+   get_account_nonce->set_account( account );
 
-   pack::json j;
-   pack::to_json( j, req );
-   auto future = client->rpc( service::chain, j.dump(), 750 /* ms */, mq::retry_policy::none );
+   auto future = client->rpc( service::chain, converter::as< std::string >( req ), 750 /* ms */, mq::retry_policy::none );
+   auto resp = converter::to< rpc::chain::chain_response >( future.get() );
 
-   rpc::chain::chain_rpc_response resp;
-   pack::from_json( pack::json::parse( future.get() ), resp );
+   KOINOS_ASSERT( !resp.has_error(), koinos::exception, "received error response from chain: ${e}", ("e", resp.error()) );
+   KOINOS_ASSERT( resp.has_get_account_nonce(), koinos::exception, "unexpected response from chain" );
 
-   std::visit( koinos::overloaded {
-      [&]( const rpc::chain::get_account_nonce_response& r )
-      {
-         nonce = r.nonce;
-      },
-      [&] ( const rpc::chain::chain_error_response& r )
-      {
-         KOINOS_THROW( koinos::exception, "Received error response from chain: ${error}", ("error", r.error_text) );
-      },
-      [&] ( const auto& r )
-      {
-         KOINOS_THROW( koinos::exception, "Unexpected response from chain" );
-      }
-   }, resp );
-
-   return nonce;
+   return resp.get_account_nonce().nonce();
 }
 
 void submit_transaction( std::shared_ptr< mq::client > client, const protocol::transaction& t )
 {
-   rpc::chain::chain_rpc_request req = rpc::chain::submit_transaction_request {
-      .transaction = t,
-      .verify_passive_data = true,
-      .verify_transaction_signatures = true
-   };
+   rpc::chain::chain_request req;
+   auto submit_transaction = req.mutable_submit_transaction();
+   submit_transaction->mutable_transaction()->CopyFrom( t );
+   submit_transaction->set_verify_passive_data( true );
+   submit_transaction->set_verify_transaction_signature( true );
 
-   pack::json j;
-   pack::to_json( j, req );
-   auto future = client->rpc( service::chain, j.dump(), 750 /* ms */, mq::retry_policy::none );
+   auto future = client->rpc( service::chain, converter::as< std::string >( req ), 750 /* ms */, mq::retry_policy::none );
+   auto resp = converter::to< rpc::chain::chain_response >( future.get() );
 
-   rpc::chain::chain_rpc_response resp;
-   pack::from_json( pack::json::parse( future.get() ), resp );
-
-   std::visit( koinos::overloaded {
-      [&]( const rpc::chain::submit_transaction_response& r )
-      {
-      },
-      [&] ( const rpc::chain::chain_error_response& r )
-      {
-         KOINOS_THROW( koinos::exception, "Received error response from chain: ${error}", ("error", r.error_text) );
-      },
-      [&] ( const auto& r )
-      {
-         KOINOS_THROW( koinos::exception, "Unexpected response from chain" );
-      }
-   }, resp );
+   KOINOS_ASSERT( !resp.has_error(), koinos::exception, "received error response from chain: ${e}", ("e", resp.error()) );
+   KOINOS_ASSERT( resp.has_submit_transaction(), koinos::exception, "unexpected response from chain" );
 }
