@@ -84,7 +84,7 @@ int main( int argc, char** argv )
       std::string private_key_wif( ( std::istreambuf_iterator< char >( ifs ) ), ( std::istreambuf_iterator< char >() ) );
 
       crypto::private_key signing_key = crypto::private_key::from_wif( private_key_wif );
-      std::string public_address      = signing_key.get_public_key().to_address();
+      std::string public_address      = signing_key.get_public_key().to_address_bytes();
 
       protocol::transaction transaction;
       protocol::active_transaction_data active_data;
@@ -106,7 +106,7 @@ int main( int argc, char** argv )
          auto op = active_data.add_operations();
          auto upload_contract = op->mutable_upload_contract();
 
-         auto contract_id = koinos::crypto::hash( crypto::multicodec::ripemd_160, signing_key.get_public_key().to_address() );
+         auto contract_id = koinos::crypto::hash( crypto::multicodec::ripemd_160, signing_key.get_public_key().to_address_bytes() );
          upload_contract->set_contract_id( converter::as< std::string >( contract_id ) );
          upload_contract->set_bytecode( converter::as< std::string >( bytecode ) );
 

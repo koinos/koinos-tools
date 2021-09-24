@@ -75,7 +75,7 @@ int main( int argc, char** argv )
       {
          auto secret = koinos::crypto::hash( koinos::crypto::multicodec::sha2_256, seed, i );
          auto private_key = koinos::crypto::private_key::regenerate( secret );
-         std::cout << "Generated key: " << private_key.get_public_key().to_address() << std::endl;
+         std::cout << "Generated key: " << private_key.get_public_key().to_address_bytes() << std::endl;
          outstream << private_key.to_wif() << std::endl;
       }
 
