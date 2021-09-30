@@ -10,9 +10,9 @@
 [submodule "libraries/mq"]
 	path = libraries/mq
 	url = https://github.com/koinos/koinos-mq-cpp
-[submodule "libraries/types"]
-	path = libraries/types
-	url = https://github.com/koinos/koinos-types
 [submodule "libraries/util"]
 	path = libraries/util
 	url = https://github.com/koinos/koinos-util-cpp
+[submodule "libraries/proto"]
+	path = libraries/proto
+	url = https://github.com/koinos/koinos-proto-cpp
