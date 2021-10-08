@@ -3,6 +3,7 @@
 
 #include <boost/program_options.hpp>
 
+#include <google/protobuf/message.h>
 #include <google/protobuf/util/json_util.h>
 
 #include <koinos/conversion.hpp>
@@ -110,14 +111,23 @@ int main( int argc, char** argv )
       // Sign the transaction
       sign_transaction( transaction, private_key );
 
+      google::protobuf::util::JsonPrintOptions print_options;
+      print_options.add_whitespace = true;
+      print_options.always_print_primitive_fields = true;
+      print_options.preserve_proto_field_names = true;
+
+      std::string json_str;
+
       if (wrap) // Wrap the transaction if requested
       {
          auto request = wrap_transaction( transaction );
-         std::cout << request << std::endl;
+         google::protobuf::util::MessageToJsonString( request, &json_str, print_options );
+         std::cout << json_str << std::endl;
       }
       else // Else simply output the signed transaction
       {
-         std::cout << transaction << std::endl;
+         google::protobuf::util::MessageToJsonString( transaction, &json_str, print_options );
+         std::cout << json_str << std::endl;
       }
 
       return EXIT_SUCCESS;

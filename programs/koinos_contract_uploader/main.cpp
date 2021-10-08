@@ -15,6 +15,9 @@
 #include <koinos/protocol/protocol.pb.h>
 #include <koinos/rpc/chain/chain_rpc.pb.h>
 
+#include <google/protobuf/message.h>
+#include <google/protobuf/util/json_util.h>
+
 #define HELP_OPTION               "help"
 #define PRIVATE_KEY_FILE_OPTION   "private-key-file"
 #define PRIVATE_KEY_FILE_DEFAULT  "private.key"
@@ -31,6 +34,7 @@ using namespace boost;
 using namespace koinos;
 
 uint64_t get_next_nonce( std::shared_ptr< mq::client > client, const std::string& account );
+uint64_t get_account_rc( std::shared_ptr< mq::client > client, const std::string& account );
 void submit_transaction( std::shared_ptr< mq::client > client, const protocol::transaction& t );
 
 int main( int argc, char** argv )
@@ -146,7 +150,7 @@ int main( int argc, char** argv )
          KOINOS_THROW( koinos::exception, "Use --upload or --override when invoking the tool, see --help for more information" );
       }
 
-      active_data.set_resource_limit( 10'000'000 );
+      active_data.set_rc_limit( get_account_rc( client, public_address ) );
       active_data.set_nonce( get_next_nonce( client, public_address ) );
 
       transaction.set_active( converter::as< std::string >( active_data ) );
@@ -192,6 +196,23 @@ uint64_t get_next_nonce( std::shared_ptr< mq::client > client, const std::string
    KOINOS_ASSERT( resp.has_get_account_nonce(), koinos::exception, "unexpected response from chain" );
 
    return resp.get_account_nonce().nonce();
+}
+
+uint64_t get_account_rc( std::shared_ptr< mq::client > client, const std::string& account )
+{
+   uint64_t account_rc = 0;
+
+   rpc::chain::chain_request req;
+   auto get_account_rc = req.mutable_get_account_rc();
+   get_account_rc->set_account( account );
+
+   auto future = client->rpc( service::chain, converter::as< std::string >( req ), 750 /* ms */, mq::retry_policy::none );
+   auto resp = converter::to< rpc::chain::chain_response >( future.get() );
+
+   KOINOS_ASSERT( !resp.has_error(), koinos::exception, "received error response from chain: ${e}", ("e", resp.error()) );
+   KOINOS_ASSERT( resp.has_get_account_rc(), koinos::exception, "unexpected response from chain" );
+
+   return resp.get_account_rc().rc();
 }
 
 void submit_transaction( std::shared_ptr< mq::client > client, const protocol::transaction& t )
