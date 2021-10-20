@@ -7,7 +7,7 @@
 #include <koinos/log.hpp>
 #include <koinos/crypto/elliptic.hpp>
 #include <koinos/crypto/multihash.hpp>
-#include <koinos/util.hpp>
+#include <koinos/util/random.hpp>
 
 // Command line option definitions
 #define HELP_OPTION        "help"
@@ -51,7 +51,7 @@ int main( int argc, char** argv )
       auto seed = args[ SEED_OPTION ].as< std::string >();
       if ( !seed.size() )
       {
-         seed = koinos::random_alphanumeric( 64 );
+         seed = koinos::util::random_alphanumeric( 64 );
       }
 
       auto output_file = std::filesystem::path( args[ OUTPUT_FILE_OPTION ].as< std::string >() );

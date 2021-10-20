@@ -4,13 +4,14 @@
 
 #include <boost/program_options.hpp>
 
-#include <koinos/conversion.hpp>
 #include <koinos/exception.hpp>
 #include <koinos/log.hpp>
 #include <koinos/crypto/elliptic.hpp>
 #include <koinos/crypto/multihash.hpp>
 #include <koinos/mq/client.hpp>
-#include <koinos/util.hpp>
+#include <koinos/util/base58.hpp>
+#include <koinos/util/conversion.hpp>
+#include <koinos/util/services.hpp>
 
 #include <koinos/protocol/protocol.pb.h>
 #include <koinos/rpc/chain/chain_rpc.pb.h>
@@ -32,6 +33,7 @@
 
 using namespace boost;
 using namespace koinos;
+using namespace std::chrono_literals;
 
 uint64_t get_next_nonce( std::shared_ptr< mq::client > client, const std::string& account );
 uint64_t get_account_rc( std::shared_ptr< mq::client > client, const std::string& account );
@@ -71,10 +73,7 @@ int main( int argc, char** argv )
 
       auto client = std::make_shared< mq::client >();
 
-      auto ec = client->connect( args[ AMQP_OPTION ].as< std::string >(), mq::retry_policy::none );
-
-      if ( ec != mq::error_code::success )
-         KOINOS_THROW( koinos::exception, "Unable to connect to AMQP server " );
+      client->connect( args[ AMQP_OPTION ].as< std::string >(), mq::retry_policy::none );
 
       std::filesystem::path private_key_file( args[ PRIVATE_KEY_FILE_OPTION ].as< std::string >() );
 
@@ -111,10 +110,10 @@ int main( int argc, char** argv )
          auto upload_contract = op->mutable_upload_contract();
 
          auto contract_id = koinos::crypto::hash( crypto::multicodec::ripemd_160, signing_key.get_public_key().to_address_bytes() );
-         upload_contract->set_contract_id( converter::as< std::string >( contract_id ) );
-         upload_contract->set_bytecode( converter::as< std::string >( bytecode ) );
+         upload_contract->set_contract_id( util::converter::as< std::string >( contract_id ) );
+         upload_contract->set_bytecode( util::converter::as< std::string >( bytecode ) );
 
-         LOG(info) << "Attempting to upload contract with ID: " << to_hex( upload_contract->contract_id() );
+         LOG(info) << "Attempting to upload contract with ID: " << util::to_base58( upload_contract->contract_id() );
       }
       else if ( args.count( OVERRIDE_OPTION ) )
       {
@@ -140,7 +139,7 @@ int main( int argc, char** argv )
          auto set_system_call = op->mutable_set_system_call();
          set_system_call->set_call_id( args[ CALL_ID_OPTION ].as< uint32_t >() );
          auto system_call_bundle = set_system_call->mutable_target()->mutable_system_call_bundle();
-         system_call_bundle->set_contract_id( from_hex( args[ CONTRACT_ID_OPTION ].as< std::string >() ) );
+         system_call_bundle->set_contract_id( util::from_base58< std::string >( args[ CONTRACT_ID_OPTION ].as< std::string >() ) );
          system_call_bundle->set_entry_point( args[ ENTRY_POINT_OPTION ].as< uint32_t >() );
 
          LOG(info) << "Attempting to apply the system call override";
@@ -153,11 +152,11 @@ int main( int argc, char** argv )
       active_data.set_rc_limit( get_account_rc( client, public_address ) );
       active_data.set_nonce( get_next_nonce( client, public_address ) );
 
-      transaction.set_active( converter::as< std::string >( active_data ) );
+      transaction.set_active( util::converter::as< std::string >( active_data ) );
 
       auto trx_id = crypto::hash( crypto::multicodec::sha2_256, transaction.active() );
-      transaction.set_id( converter::as< std::string >( trx_id ) );
-      transaction.set_signature_data( converter::as< std::string >( signing_key.sign_compact( trx_id ) ) );
+      transaction.set_id( util::converter::as< std::string >( trx_id ) );
+      transaction.set_signature_data( util::converter::as< std::string >( signing_key.sign_compact( trx_id ) ) );
 
       submit_transaction( client, transaction );
 
@@ -189,8 +188,8 @@ uint64_t get_next_nonce( std::shared_ptr< mq::client > client, const std::string
    auto get_account_nonce = req.mutable_get_account_nonce();
    get_account_nonce->set_account( account );
 
-   auto future = client->rpc( service::chain, converter::as< std::string >( req ), 750 /* ms */, mq::retry_policy::none );
-   auto resp = converter::to< rpc::chain::chain_response >( future.get() );
+   auto future = client->rpc( util::service::chain, util::converter::as< std::string >( req ), 750ms, mq::retry_policy::none );
+   auto resp = util::converter::to< rpc::chain::chain_response >( future.get() );
 
    KOINOS_ASSERT( !resp.has_error(), koinos::exception, "received error response from chain: ${e}", ("e", resp.error()) );
    KOINOS_ASSERT( resp.has_get_account_nonce(), koinos::exception, "unexpected response from chain" );
@@ -206,8 +205,8 @@ uint64_t get_account_rc( std::shared_ptr< mq::client > client, const std::string
    auto get_account_rc = req.mutable_get_account_rc();
    get_account_rc->set_account( account );
 
-   auto future = client->rpc( service::chain, converter::as< std::string >( req ), 750 /* ms */, mq::retry_policy::none );
-   auto resp = converter::to< rpc::chain::chain_response >( future.get() );
+   auto future = client->rpc( util::service::chain, util::converter::as< std::string >( req ), 750ms, mq::retry_policy::none );
+   auto resp = util::converter::to< rpc::chain::chain_response >( future.get() );
 
    KOINOS_ASSERT( !resp.has_error(), koinos::exception, "received error response from chain: ${e}", ("e", resp.error()) );
    KOINOS_ASSERT( resp.has_get_account_rc(), koinos::exception, "unexpected response from chain" );
@@ -223,8 +222,8 @@ void submit_transaction( std::shared_ptr< mq::client > client, const protocol::t
    submit_transaction->set_verify_passive_data( true );
    submit_transaction->set_verify_transaction_signature( true );
 
-   auto future = client->rpc( service::chain, converter::as< std::string >( req ), 750 /* ms */, mq::retry_policy::none );
-   auto resp = converter::to< rpc::chain::chain_response >( future.get() );
+   auto future = client->rpc( util::service::chain, util::converter::as< std::string >( req ), 750ms, mq::retry_policy::none );
+   auto resp = util::converter::to< rpc::chain::chain_response >( future.get() );
 
    KOINOS_ASSERT( !resp.has_error(), koinos::exception, "received error response from chain: ${e}", ("e", resp.error()) );
    KOINOS_ASSERT( resp.has_submit_transaction(), koinos::exception, "unexpected response from chain" );
