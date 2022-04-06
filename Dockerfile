@@ -34,6 +34,6 @@ RUN apk update && \
     apk add \
         musl \
         libstdc++
-COPY --from=builder /koinos-tools/programs/koinos_contract_uploader/koinos_contract_uploader /usr/local/bin
+COPY --from=builder /koinos-tools/programs/koinos_genesis_tool/koinos_genesis_tool /usr/local/bin
 COPY --from=builder /koinos-tools/programs/koinos_get_dev_key/koinos_get_dev_key /usr/local/bin
 COPY --from=builder /koinos-tools/programs/koinos_transaction_signer/koinos_transaction_signer /usr/local/bin
