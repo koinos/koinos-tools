@@ -31,9 +31,9 @@ using namespace koinos;
 void sign_transaction( protocol::transaction& transaction, crypto::private_key& transaction_signing_key )
 {
    // Signature is on the hash of the active data
-   auto trx_id = crypto::hash( crypto::multicodec::sha2_256, transaction.active() );
+   auto trx_id = crypto::hash( crypto::multicodec::sha2_256, transaction.header() );
    transaction.set_id( util::converter::as< std::string >( trx_id ) );
-   transaction.set_signature_data( util::converter::as< std::string >( transaction_signing_key.sign_compact( trx_id ) ) );
+   *transaction.add_signatures() = util::converter::as< std::string >( transaction_signing_key.sign_compact( trx_id ) );
 }
 
 // Wrap the given transaction in a request
@@ -42,8 +42,6 @@ rpc::chain::chain_request wrap_transaction( protocol::transaction& transaction )
    rpc::chain::chain_request req;
    auto submit_transaction = req.mutable_submit_transaction();
    submit_transaction->mutable_transaction()->CopyFrom( transaction );
-   submit_transaction->set_verify_passive_data( true );
-   submit_transaction->set_verify_transaction_signature( true );
 
    return req;
 }

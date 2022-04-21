@@ -1,3 +1,3 @@
-add_subdirectory(koinos_contract_uploader)
 add_subdirectory(koinos_get_dev_key)
 add_subdirectory(koinos_transaction_signer)
+add_subdirectory(koinos_genesis_tool)
