@@ -7,6 +7,7 @@
 #include <koinos/log.hpp>
 #include <koinos/crypto/elliptic.hpp>
 #include <koinos/crypto/multihash.hpp>
+#include <koinos/util/base58.hpp>
 #include <koinos/util/random.hpp>
 
 // Command line option definitions
@@ -75,7 +76,8 @@ int main( int argc, char** argv )
       {
          auto secret = koinos::crypto::hash( koinos::crypto::multicodec::sha2_256, seed, i );
          auto private_key = koinos::crypto::private_key::regenerate( secret );
-         std::cout << "Generated key: " << private_key.get_public_key().to_address_bytes() << std::endl;
+         auto b58_pubkey = koinos::util::to_base58( private_key.get_public_key().to_address_bytes() );
+         std::cout << "Generated public key: " << b58_pubkey << std::endl;
          outstream << private_key.to_wif() << std::endl;
       }
 
