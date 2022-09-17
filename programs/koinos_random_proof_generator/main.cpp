@@ -45,7 +45,7 @@ int main(int argc, char **argv)
       options.add_options()
       (HELP_OPTION "," HELP_FLAG, "print usage message")
       (PRIVATE_KEY_OPTION "," PRIVATE_KEY_FLAG, boost::program_options::value<std::string>()->default_value("private.key"), "private key file")
-      (INPUT_OPTION "," INPUT_FLAG, "input to use to generate the random proof");
+      (INPUT_OPTION "," INPUT_FLAG, boost::program_options::value< std::string >()->default_value( "" ), "input to use to generate the random proof (base64 encoded)");
 
       // Parse command-line options
       boost::program_options::variables_map vm;
@@ -55,8 +55,8 @@ int main(int argc, char **argv)
       if (vm.count(HELP_OPTION))
       {
          std::cout << "Koinos Random Proof Generator" << std::endl;
-         std::cout << "Accepts an input to use to generate the random proof" << std::endl;
-         std::cout << "Returns the random proof and its hash base64 encoded and in a JSON format via STDOUT" << std::endl
+         std::cout << "Accepts an input to use to generate the random proof (base64 encoded)" << std::endl;
+         std::cout << "Returns the random proof and its hash (base64 encoded and in a JSON format) via STDOUT" << std::endl
                    << std::endl;
          std::cout << options << std::endl;
          return EXIT_SUCCESS;
@@ -70,7 +70,7 @@ int main(int argc, char **argv)
 
       std::string input = vm[INPUT_OPTION].as<std::string>();
 
-      auto [ proof, proof_hash ] = private_key.generate_random_proof( input );
+      auto [ proof, proof_hash ] = private_key.generate_random_proof( util::from_base64< std::string >( input ) );
 
       // output proof and its hash base64 encoded and in a JSON format
       std::string json_str = "{ \"proof\": \"" + util::to_base64< std::string >( proof ) + "\", \"proof_hash\": \"" + util::to_base64< std::string >( util::converter::as< std::string >( proof_hash ) ) + "\" }";
