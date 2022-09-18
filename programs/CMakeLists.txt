@@ -1,3 +1,4 @@
 add_subdirectory(koinos_get_dev_key)
 add_subdirectory(koinos_transaction_signer)
 add_subdirectory(koinos_genesis_tool)
+add_subdirectory(koinos_random_proof_generator)

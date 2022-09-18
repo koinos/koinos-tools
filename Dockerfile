@@ -37,3 +37,4 @@ RUN apk update && \
 COPY --from=builder /koinos-tools/programs/koinos_genesis_tool/koinos_genesis_tool /usr/local/bin
 COPY --from=builder /koinos-tools/programs/koinos_get_dev_key/koinos_get_dev_key /usr/local/bin
 COPY --from=builder /koinos-tools/programs/koinos_transaction_signer/koinos_transaction_signer /usr/local/bin
+COPY --from=builder /koinos-tools/programs/koinos_random_proof_generator/koinos_random_proof_generator /usr/local/bin
