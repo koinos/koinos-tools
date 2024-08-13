@@ -46,18 +46,6 @@ jobs:
       script:
         - cmake --build . --config Release --parallel 3 --target format.check
 
-before_install:
-  - eval "${MATRIX_EVAL}"
-
-install:
-  - ci/install.sh
-
-script:
-  - ci/build.sh
-
-after_success:
-  - ci/after_success.sh
-
 notifications:
   slack:
     secure: DWbyMZgFnUrmF3hvGM3fZUiZQ4I/s7q/Efw3125JRo74np0Q1qZf9vRgHraWNJkDNuvaYVLnpHJpAqgoLfUTiwl8iRCAw4/KW0g1lgkjfXIQ8BeYuF6FlP41wGdfoPxKWT/tfWemrNkKnvtoP6ZZaYmOL+b69PdCvT3E1ZGdL4sH5X+/qZLVgqW+Gyr6wS8Nmm+XXpFKxoGGFCoweymScSTukoBSKNK3pfCRbnhkN2PMqSgEsIu7JuW8dHIyQne28yTRH2sCewYPWyZqgvSs95OCqkthi1f6unyMDzDYpz04IY4dggE9HIhkiVuDgmxXvqzSNUFW/C/ER3H6K4vISkfnGi2TZJUNPhRHc+V3JPhJZBXq0ykgCbZrnPqxnVIWdgRtmLRDOGLU5w1rmC1Hwo31wV0qwWsMBp3lzVD4zb7kti4FNbAoiKDKaIq5+VIfbF2Y75o0owIaxuecznJ4e8r7Sn+xV9g/n/hfgRIfwOnTjIJrHXPxjKzarbsPX9c2hhy3wHvAyA+V96TisjIraQakIa/cq+oq8yHoO5vP19qXGa3rOgaP+7bA5429ua9OezVWgGK0p2ytZRw2pH+FJg1xFxo/EoaTyUCR5DGpOsx7hnNcjIDGR8ZXwd0eSOCl3twlcmxJVc7zhgb448rF3Z75EKQrs09z2gQfrMbesKU=
