@@ -26,7 +26,7 @@ int main( int argc, char** argv, char** envp )
   const auto new_vhp_address      = util::from_base58< std::string >( "1CrLSiK8aJVEg7L94TapoGTmAqnZW9qNzA"s );
   const auto name_service_address = util::from_base58< std::string >( "13NQnca5chwpKm4ebHbvgvJmXrsSCTayDJ"s );
 
-  const auto payer      = util::from_base58< std::string >( "147ABaHVxtpoSpfpZ8yry7eaFAjV87trGR"s );
+  const auto payer      = util::from_base58< std::string >( "1Nx58cnvGdkVvz9h6VQytqNyZiGQTQD8EH"s );
   const auto governance = util::from_base58< std::string >( "17MjUXDCuTX1p9Kyqy48SQkkPfKScoggo"s );
 
   contracts::governance::submit_proposal_arguments proposal;
@@ -114,7 +114,7 @@ int main( int argc, char** argv, char** envp )
   call_contract->set_args( util::converter::as< std::string >( proposal ) );
 
   chain::value_type nonce_value;
-  nonce_value.set_uint64_value( 8 );
+  nonce_value.set_uint64_value( 1 );
 
   auto header = trx.mutable_header();
   header->set_nonce( util::converter::as< std::string >( nonce_value ) );
