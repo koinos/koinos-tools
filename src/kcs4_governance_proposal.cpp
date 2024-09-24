@@ -63,6 +63,13 @@ int main( int argc, char** argv, char** envp )
   set_record.set_address( new_koin_address );
   call_contract->set_args( util::converter::as< std::string >( set_record ) );
 
+  // Transfer '@koin' nickname to new Koin contract
+  op = proposal.add_operations();
+  call_contract = op->mutable_call_contract();
+  call_contract->set_contract_id( util::from_base58< std::string >( "1KXsC2bSnKAMAZ51gq3xxKBo74a7cDJjkR" ) );
+  call_contract->set_entry_point( 0x5cffdf33 );
+  call_contract->set_args( util::from_base64< std::string >( "CgRrb2luEhkAuA4z1VEWTTde23Vcj6yVbdFtaF-McboVGAE=" ) );
+
   // Set old Koin contract as not system contract
   op                  = proposal.add_operations();
   set_system_contract = op->mutable_set_system_contract();
@@ -83,6 +90,13 @@ int main( int argc, char** argv, char** envp )
   set_record.set_name( "vhp" );
   set_record.set_address( new_vhp_address );
   call_contract->set_args( util::converter::as< std::string >( set_record ) );
+
+  // Transfer '@vhp' nickname to new Koin contract
+  op = proposal.add_operations();
+  call_contract = op->mutable_call_contract();
+  call_contract->set_contract_id( util::from_base58< std::string >( "1KXsC2bSnKAMAZ51gq3xxKBo74a7cDJjkR" ) );
+  call_contract->set_entry_point( 0x5cffdf33 );
+  call_contract->set_args( util::from_base64< std::string >( "CgN2aHASGQCB_f8HtuFLrw_ICPpn442FeW7frX9u7ocYAQ==" ) );
 
   // Set old VHP contract as not system contract
   op                  = proposal.add_operations();
