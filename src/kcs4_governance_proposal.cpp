@@ -64,7 +64,7 @@ int main( int argc, char** argv, char** envp )
   call_contract->set_args( util::converter::as< std::string >( set_record ) );
 
   // Transfer '@koin' nickname to new Koin contract
-  op = proposal.add_operations();
+  op            = proposal.add_operations();
   call_contract = op->mutable_call_contract();
   call_contract->set_contract_id( util::from_base58< std::string >( "1KXsC2bSnKAMAZ51gq3xxKBo74a7cDJjkR" ) );
   call_contract->set_entry_point( 0x5cffdf33 );
@@ -92,7 +92,7 @@ int main( int argc, char** argv, char** envp )
   call_contract->set_args( util::converter::as< std::string >( set_record ) );
 
   // Transfer '@vhp' nickname to new Koin contract
-  op = proposal.add_operations();
+  op            = proposal.add_operations();
   call_contract = op->mutable_call_contract();
   call_contract->set_contract_id( util::from_base58< std::string >( "1KXsC2bSnKAMAZ51gq3xxKBo74a7cDJjkR" ) );
   call_contract->set_entry_point( 0x5cffdf33 );
