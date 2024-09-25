@@ -26,7 +26,7 @@ int main( int argc, char** argv, char** envp )
   const auto new_vhp_address      = util::from_base58< std::string >( "1CrLSiK8aJVEg7L94TapoGTmAqnZW9qNzA"s );
   const auto name_service_address = util::from_base58< std::string >( "13NQnca5chwpKm4ebHbvgvJmXrsSCTayDJ"s );
 
-  const auto payer      = util::from_base58< std::string >( "1Nx58cnvGdkVvz9h6VQytqNyZiGQTQD8EH"s );
+  const auto payer      = util::from_base58< std::string >( "1QFX6pmyDtoiHuM9WDotRtPEf4Z16T64Wj"s );
   const auto governance = util::from_base58< std::string >( "17MjUXDCuTX1p9Kyqy48SQkkPfKScoggo"s );
 
   contracts::governance::submit_proposal_arguments proposal;
@@ -132,7 +132,7 @@ int main( int argc, char** argv, char** envp )
 
   auto header = trx.mutable_header();
   header->set_nonce( util::converter::as< std::string >( nonce_value ) );
-  header->set_rc_limit( 10'000'000 ); // 1 Mana
+  header->set_rc_limit( 100'000'000 ); // 10 Mana
   header->set_chain_id( util::from_base64< std::string >( "EiBncD4pKRIQWco_WRqo5Q-xnXR7JuO3PtZv983mKdKHSQ=="s ) );
   header->set_payer( payer );
 
