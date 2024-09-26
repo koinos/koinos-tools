@@ -1,0 +1,84 @@
+{
+  "call_contract": {
+    "contract_id": "17MjUXDCuTX1p9Kyqy48SQkkPfKScoggo",
+    "entry_point": "submit_proposal",
+    "args": {
+      "operations": [
+        {
+          "set_system_contract": {
+            "contract_id": "1HnCM6v2bLg8Qhw6BKCVhGPeoTamJbkbFi",
+            "system_contract": true
+          }
+        },
+        {
+          "set_system_call": {
+            "call_id": 201,
+            "target": {
+              "system_call_bundle": {
+                "contract_id": "1HnCM6v2bLg8Qhw6BKCVhGPeoTamJbkbFi",
+                "entry_point": 759581355
+              }
+            }
+          }
+        },
+        {
+          "set_system_call": {
+            "call_id": 202,
+            "target": {
+              "system_call_bundle": {
+                "contract_id": "1HnCM6v2bLg8Qhw6BKCVhGPeoTamJbkbFi",
+                "entry_point": 2162423241
+              }
+            }
+          }
+        },
+        {
+          "call_contract": {
+            "contract_id": "13NQnca5chwpKm4ebHbvgvJmXrsSCTayDJ",
+            "entry_point": 3796420410,
+            "args": "CgRrb2luEhkAuA4z1VEWTTde23Vcj6yVbdFtaF-McboV"
+          }
+        },
+        {
+          "call_contract": {
+            "contract_id": "1KXsC2bSnKAMAZ51gq3xxKBo74a7cDJjkR",
+            "entry_point": 1560272691,
+            "args": "CgRrb2luEhkAuA4z1VEWTTde23Vcj6yVbdFtaF-McboVGAE="
+          }
+        },
+        {
+          "set_system_contract": {
+            "contract_id": "1FaSvLjQJsCJKq5ybmGsMMQs8RQYyVv8ju"
+          }
+        },
+        {
+          "set_system_contract": {
+            "contract_id": "1CrLSiK8aJVEg7L94TapoGTmAqnZW9qNzA",
+            "system_contract": true
+          }
+        },
+        {
+          "call_contract": {
+            "contract_id": "13NQnca5chwpKm4ebHbvgvJmXrsSCTayDJ",
+            "entry_point": 3796420410,
+            "args": "CgN2aHASGQCB_f8HtuFLrw_ICPpn442FeW7frX9u7oc="
+          }
+        },
+        {
+          "call_contract": {
+            "contract_id": "1KXsC2bSnKAMAZ51gq3xxKBo74a7cDJjkR",
+            "entry_point": 1560272691,
+            "args": "CgN2aHASGQCB_f8HtuFLrw_ICPpn442FeW7frX9u7ocYAQ=="
+          }
+        },
+        {
+          "set_system_contract": {
+            "contract_id": "17n12ktwN79sR6ia9DDgCfmw77EgpbTyBi"
+          }
+        }
+      ],
+      "operation_merkle_root": "EiCgKrK7aQ5XTDRs85o8bpKq4_PMGRcEQCLSpTzvQt0hww==",
+      "fee": "6000000000"
+    }
+  }
+}
