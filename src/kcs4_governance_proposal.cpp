@@ -20,14 +20,18 @@ int main( int argc, char** argv, char** envp )
 {
   initialize_logging( "koinos_governance_proposal", {}, "info" );
 
-  const auto old_koin_address     = util::from_base58< std::string >( "1FaSvLjQJsCJKq5ybmGsMMQs8RQYyVv8ju"s );
-  const auto old_vhp_address      = util::from_base58< std::string >( "17n12ktwN79sR6ia9DDgCfmw77EgpbTyBi"s );
-  const auto new_koin_address     = util::from_base58< std::string >( "1HnCM6v2bLg8Qhw6BKCVhGPeoTamJbkbFi"s );
-  const auto new_vhp_address      = util::from_base58< std::string >( "1CrLSiK8aJVEg7L94TapoGTmAqnZW9qNzA"s );
-  const auto name_service_address = util::from_base58< std::string >( "13NQnca5chwpKm4ebHbvgvJmXrsSCTayDJ"s );
+  const auto chain_id = util::from_base64< std::string >( "EiBZK_GGVP0H_fXVAM3j6EAuz3-B-l3ejxRSewi7qIBfSA=="s );
 
-  const auto payer      = util::from_base58< std::string >( "1QFX6pmyDtoiHuM9WDotRtPEf4Z16T64Wj"s );
-  const auto governance = util::from_base58< std::string >( "17MjUXDCuTX1p9Kyqy48SQkkPfKScoggo"s );
+  const auto old_koin_address     = util::from_base58< std::string >( "15DJN4a8SgrbGhhGksSBASiSYjGnMU8dGL"s );
+  const auto old_vhp_address      = util::from_base58< std::string >( "18tWNU7E4yuQzz7hMVpceb9ixmaWLVyQsr"s );
+  const auto new_koin_address     = util::from_base58< std::string >( "19GYjDBVXU7keLbYvMLazsGQn3GTWHjHkK"s );
+  const auto new_vhp_address      = util::from_base58< std::string >( "1ARqxjBUn3pDJEc6nf1wdsyAo1VfLFFrhC"s );
+  const auto name_service_address = util::from_base58< std::string >( "19WxDJ9Kcvx4VqQFkpwVmwVEy1hMuwXtQE"s );
+  const auto nickname_address     = util::from_base58< std::string >( "1KD9Es7LBBjA1FY3ViCgQJ7e6WH1ipKbhz"s );
+
+  const auto payee      = util::from_base58< std::string >( "1Nx58cnvGdkVvz9h6VQytqNyZiGQTQD8EH"s );
+  const auto payer      = util::from_base58< std::string >( "162GhJwsciDiKsgwzj2t6VoFHt3RMzGKdG"s );
+  const auto governance = util::from_base58< std::string >( "19qj51eTbSFJYU7ZagudkpxPgNSzPMfdPX"s );
 
   contracts::governance::submit_proposal_arguments proposal;
 
@@ -66,9 +70,9 @@ int main( int argc, char** argv, char** envp )
   // Transfer '@koin' nickname to new Koin contract
   op            = proposal.add_operations();
   call_contract = op->mutable_call_contract();
-  call_contract->set_contract_id( util::from_base58< std::string >( "1KXsC2bSnKAMAZ51gq3xxKBo74a7cDJjkR" ) );
-  call_contract->set_entry_point( 0x5cffdf33 );
-  call_contract->set_args( util::from_base64< std::string >( "CgRrb2luEhkAuA4z1VEWTTde23Vcj6yVbdFtaF-McboVGAE=" ) );
+  call_contract->set_contract_id( nickname_address );
+  call_contract->set_entry_point( 1560272691 );
+  call_contract->set_args( util::from_base64< std::string >( "CgRrb2luEhkAWrG7DutiUIS3gYyjz82aGDNnN76l-vLAGAE=" ) );
 
   // Set old Koin contract as not system contract
   op                  = proposal.add_operations();
@@ -94,9 +98,9 @@ int main( int argc, char** argv, char** envp )
   // Transfer '@vhp' nickname to new Koin contract
   op            = proposal.add_operations();
   call_contract = op->mutable_call_contract();
-  call_contract->set_contract_id( util::from_base58< std::string >( "1KXsC2bSnKAMAZ51gq3xxKBo74a7cDJjkR" ) );
-  call_contract->set_entry_point( 0x5cffdf33 );
-  call_contract->set_args( util::from_base64< std::string >( "CgN2aHASGQCB_f8HtuFLrw_ICPpn442FeW7frX9u7ocYAQ==" ) );
+  call_contract->set_contract_id( nickname_address );
+  call_contract->set_entry_point( 1560272691 );
+  call_contract->set_args( util::from_base64< std::string >( "CgN2aHASGQBna_xOG7WbCjTK0ZziKQKPZAdn6yBTkG8YAQ==" ) );
 
   // Set old VHP contract as not system contract
   op                  = proposal.add_operations();
@@ -134,6 +138,7 @@ int main( int argc, char** argv, char** envp )
   header->set_nonce( util::converter::as< std::string >( nonce_value ) );
   header->set_rc_limit( 100'000'000 ); // 10 Mana
   header->set_chain_id( util::from_base64< std::string >( "EiBncD4pKRIQWco_WRqo5Q-xnXR7JuO3PtZv983mKdKHSQ=="s ) );
+  header->set_payee( payee );
   header->set_payer( payer );
 
   operations.clear();
@@ -149,6 +154,8 @@ int main( int argc, char** argv, char** envp )
   trx.set_id( util::converter::as< std::string >( crypto::hash( crypto::multicodec::sha2_256, *header ) ) );
 
   LOG( info ) << "Unsigned Transaction: " << util::to_base64( trx );
+
+  LOG( info ) << "Transaction: " << trx;
 
   return EXIT_SUCCESS;
 }
