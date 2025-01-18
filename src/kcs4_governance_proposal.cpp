@@ -71,7 +71,7 @@ int main( int argc, char** argv, char** envp )
   op            = proposal.add_operations();
   call_contract = op->mutable_call_contract();
   call_contract->set_contract_id( nickname_address );
-  call_contract->set_entry_point( 1560272691 );
+  call_contract->set_entry_point( 1'560'272'691 );
   call_contract->set_args( util::from_base64< std::string >( "CgRrb2luEhkAWrG7DutiUIS3gYyjz82aGDNnN76l-vLAGAE=" ) );
 
   // Set old Koin contract as not system contract
@@ -99,7 +99,7 @@ int main( int argc, char** argv, char** envp )
   op            = proposal.add_operations();
   call_contract = op->mutable_call_contract();
   call_contract->set_contract_id( nickname_address );
-  call_contract->set_entry_point( 1560272691 );
+  call_contract->set_entry_point( 1'560'272'691 );
   call_contract->set_args( util::from_base64< std::string >( "CgN2aHASGQBna_xOG7WbCjTK0ZziKQKPZAdn6yBTkG8YAQ==" ) );
 
   // Set old VHP contract as not system contract
