@@ -137,7 +137,7 @@ int main( int argc, char** argv, char** envp )
   auto header = trx.mutable_header();
   header->set_nonce( util::converter::as< std::string >( nonce_value ) );
   header->set_rc_limit( 100'000'000 ); // 10 Mana
-  header->set_chain_id( util::from_base64< std::string >( "EiBncD4pKRIQWco_WRqo5Q-xnXR7JuO3PtZv983mKdKHSQ=="s ) );
+  header->set_chain_id( chain_id );
   header->set_payee( payee );
   header->set_payer( payer );
 
