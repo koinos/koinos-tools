@@ -25,7 +25,7 @@ int main( int argc, char** argv, char** envp )
   const auto old_koin_address     = util::from_base58< std::string >( "15DJN4a8SgrbGhhGksSBASiSYjGnMU8dGL"s );
   const auto old_vhp_address      = util::from_base58< std::string >( "18tWNU7E4yuQzz7hMVpceb9ixmaWLVyQsr"s );
   const auto new_koin_address     = util::from_base58< std::string >( "19GYjDBVXU7keLbYvMLazsGQn3GTWHjHkK"s );
-  const auto new_vhp_address      = util::from_base58< std::string >( "1ARqxjBUn3pDJEc6nf1wdsyAo1VfLFFrhC"s );
+  const auto new_vhp_address      = util::from_base58< std::string >( "12Y5vW6gk8GceH53YfRkRre2Rrcsgw7Naq"s );
   const auto name_service_address = util::from_base58< std::string >( "19WxDJ9Kcvx4VqQFkpwVmwVEy1hMuwXtQE"s );
   const auto nickname_address     = util::from_base58< std::string >( "1KD9Es7LBBjA1FY3ViCgQJ7e6WH1ipKbhz"s );
 
@@ -100,7 +100,7 @@ int main( int argc, char** argv, char** envp )
   call_contract = op->mutable_call_contract();
   call_contract->set_contract_id( nickname_address );
   call_contract->set_entry_point( 1'560'272'691 );
-  call_contract->set_args( util::from_base64< std::string >( "CgN2aHASGQBna_xOG7WbCjTK0ZziKQKPZAdn6yBTkG8YAQ==" ) );
+  call_contract->set_args( util::from_base64< std::string >( "CgN2aHASGQAQ2SEwlwdS_2h6vwi4JliA2LerasI16k4YAQ==" ) );
 
   // Set old VHP contract as not system contract
   op                  = proposal.add_operations();
