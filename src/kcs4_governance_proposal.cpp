@@ -29,8 +29,8 @@ int main( int argc, char** argv, char** envp )
   const auto name_service_address = util::from_base58< std::string >( "19WxDJ9Kcvx4VqQFkpwVmwVEy1hMuwXtQE"s );
   const auto nickname_address     = util::from_base58< std::string >( "1KD9Es7LBBjA1FY3ViCgQJ7e6WH1ipKbhz"s );
 
-  const auto payee      = util::from_base58< std::string >( "1Nx58cnvGdkVvz9h6VQytqNyZiGQTQD8EH"s );
-  const auto payer      = util::from_base58< std::string >( "162GhJwsciDiKsgwzj2t6VoFHt3RMzGKdG"s );
+  const auto proposer      = util::from_base58< std::string >( "1Nx58cnvGdkVvz9h6VQytqNyZiGQTQD8EH"s );
+  //const auto payer      = util::from_base58< std::string >( "162GhJwsciDiKsgwzj2t6VoFHt3RMzGKdG"s );
   const auto governance = util::from_base58< std::string >( "19qj51eTbSFJYU7ZagudkpxPgNSzPMfdPX"s );
 
   contracts::governance::submit_proposal_arguments proposal;
@@ -136,10 +136,10 @@ int main( int argc, char** argv, char** envp )
 
   auto header = trx.mutable_header();
   header->set_nonce( util::converter::as< std::string >( nonce_value ) );
-  header->set_rc_limit( 100'000'000 ); // 10 Mana
+  header->set_rc_limit( 200'000'000 ); // 20 Mana
   header->set_chain_id( chain_id );
-  header->set_payee( payee );
-  header->set_payer( payer );
+  //header->set_payee( payee );
+  header->set_payer( proposer );
 
   operations.clear();
   operations.reserve( trx.operations().size() );
